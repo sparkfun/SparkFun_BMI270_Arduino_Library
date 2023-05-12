@@ -6081,7 +6081,7 @@ static int8_t check_dummy_frame(uint8_t dummy_frame_header,
     int8_t rslt;
 
     /* Validate data index */
-    if (((*data_index) + 6) < fifo->length)
+    if (((*data_index) + 6) <= fifo->length)
     {
         /* Check if FIFO contains dummy frame */
         if (((fifo->data[(*data_index)] == dummy_frame_header) &&
@@ -6308,7 +6308,7 @@ static int8_t unpack_accel_headerless_frame(struct bmi2_sens_axes_data *acc,
         case BMI2_FIFO_HEAD_LESS_ACC_FRM:
 
             /* Partially read, then skip the data */
-            if (((*idx) + fifo->acc_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_ACC_LENGTH) > fifo->length)
             {
                 /* Update the data index as complete*/
                 (*idx) = fifo->length;
@@ -6340,7 +6340,7 @@ static int8_t unpack_accel_headerless_frame(struct bmi2_sens_axes_data *acc,
         case BMI2_FIFO_HEAD_LESS_GYR_ACC_FRM:
 
             /* Partially read, then skip the data */
-            if (((*idx) + fifo->acc_gyr_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_ACC_LENGTH) > fifo->length)
             {
                 /* Move the data index to the last byte */
                 (*idx) = fifo->length;
@@ -6372,7 +6372,7 @@ static int8_t unpack_accel_headerless_frame(struct bmi2_sens_axes_data *acc,
         case BMI2_FIFO_HEAD_LESS_AUX_ACC_FRM:
 
             /* Partially read, then skip the data */
-            if (((*idx) + fifo->acc_aux_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_ACC_LENGTH) > fifo->length)
             {
                 /* Move the data index to the last byte */
                 (*idx) = fifo->length;
@@ -6404,7 +6404,7 @@ static int8_t unpack_accel_headerless_frame(struct bmi2_sens_axes_data *acc,
         case BMI2_FIFO_HEAD_LESS_ALL_FRM:
 
             /* Partially read, then skip the data*/
-            if ((*idx + fifo->all_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_ACC_LENGTH) > fifo->length)
             {
                 /* Move the data index to the last byte */
                 (*idx) = fifo->length;
@@ -7155,7 +7155,7 @@ static int8_t unpack_gyro_headerless_frame(struct bmi2_sens_axes_data *gyr,
         case BMI2_FIFO_HEAD_LESS_GYR_FRM:
 
             /* Partially read, then skip the data */
-            if (((*idx) + fifo->gyr_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_GYR_LENGTH) > fifo->length)
             {
                 /* Update the data index as complete*/
                 (*idx) = fifo->length;
@@ -7187,7 +7187,7 @@ static int8_t unpack_gyro_headerless_frame(struct bmi2_sens_axes_data *gyr,
         case BMI2_FIFO_HEAD_LESS_GYR_ACC_FRM:
 
             /* Partially read, then skip the data */
-            if (((*idx) + fifo->acc_gyr_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_GYR_LENGTH) > fifo->length)
             {
                 /* Move the data index to the last byte */
                 (*idx) = fifo->length;
@@ -7219,7 +7219,7 @@ static int8_t unpack_gyro_headerless_frame(struct bmi2_sens_axes_data *gyr,
         case BMI2_FIFO_HEAD_LESS_GYR_AUX_FRM:
 
             /* Partially read, then skip the data */
-            if (((*idx) + fifo->aux_gyr_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_GYR_LENGTH) > fifo->length)
             {
                 /* Move the data index to the last byte */
                 (*idx) = fifo->length;
@@ -7251,7 +7251,7 @@ static int8_t unpack_gyro_headerless_frame(struct bmi2_sens_axes_data *gyr,
         case BMI2_FIFO_HEAD_LESS_ALL_FRM:
 
             /* Partially read, then skip the data*/
-            if ((*idx + fifo->all_frm_len) > fifo->length)
+            if (((*idx) + BMI2_FIFO_GYR_LENGTH) > fifo->length)
             {
                 /* Move the data index to the last byte */
                 (*idx) = fifo->length;
@@ -7939,7 +7939,7 @@ static int8_t check_empty_fifo(uint16_t *data_index, const struct bmi2_fifo_fram
     int8_t rslt = BMI2_OK;
 
     /* Validate data index */
-    if (((*data_index) + 6) < fifo->length)
+    if (((*data_index) + 6) <= fifo->length)
     {
         /* Check if FIFO is empty */
         if (((fifo->data[(*data_index)] == BMI2_FIFO_LSB_CONFIG_CHECK) &&
