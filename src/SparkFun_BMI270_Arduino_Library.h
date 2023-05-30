@@ -174,8 +174,8 @@ class BMI270
         int8_t getConfig(bmi2_sens_config* config);
 
         // Enable or disabled features of the sensor
-        int8_t enableFeatures(uint8_t* features, uint8_t numFeatures, bool enable = BMI2_ENABLE);
-        int8_t enableFeature(uint8_t feature, bool enable = BMI2_ENABLE);
+        int8_t enableFeatures(uint8_t* features, uint8_t numFeatures);
+        int8_t enableFeature(uint8_t feature);
         int8_t disableFeatures(uint8_t* features, uint8_t numFeatures);
         int8_t disableFeature(uint8_t feature);
 
@@ -231,7 +231,6 @@ class BMI270
 
         // FIFO helper functions
         int8_t extractFIFOData(BMI270_SensorData* data, bmi2_fifo_frame* fifoData, uint16_t* numFrames, uint8_t sensorSelect);
-        uint8_t bytesPerFIFOData();
 
         // Read/write helper functions
         static BMI2_INTF_RETURN_TYPE readRegisters(uint8_t regAddress, uint8_t* dataBuffer, uint32_t numBytes, void* interfacePtr);
@@ -256,6 +255,7 @@ class BMI270
 
         // Need to track the FIFO config for some FIFO functions
         uint16_t fifoConfigFlags;
+        uint8_t bytesPerFIFOData;
 };
 
 #endif /*__SPARKFUN_BMI270_H__*/

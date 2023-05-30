@@ -6,6 +6,45 @@ BMI270::BMI270()
     // Nothing to do
 }
 
+/// @brief Checks whether sensor is connected, initializes sensor, then sets
+/// default config parameters
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::begin()
+{
+    // Variable to track errors returned by API calls
+    int8_t err = BMI2_OK;
+
+    // Set helper function pointers
+    sensor.read = readRegisters;
+    sensor.write = writeRegisters;
+    sensor.delay_us = usDelay;
+    sensor.intf_ptr = &interfaceData;
+    sensor.read_write_len = 32;
+
+    // Initialize the sensor
+    err = bmi270_init(&sensor);
+    if(err != BMI2_OK) return err;
+
+    // Enable the accelerometer and gyroscope
+    uint8_t features[] = {BMI2_ACCEL, BMI2_GYRO};
+    err = enableFeatures(features, 2);
+    if(err != BMI2_OK) return err;
+
+    // Get the accelerometer and gyroscope configs
+    bmi2_sens_config configs[2];
+    configs[0].type = BMI2_ACCEL;
+    configs[1].type = BMI2_GYRO;
+    err = getConfigs(configs, 2);
+    if(err != BMI2_OK) return err;
+
+    // Store the accelerometer and gyroscope ranges, these are needed elsewhere
+    accRange = configs[0].cfg.acc.range;
+    gyrRange = configs[1].cfg.gyr.range;
+
+    // Done!
+    return BMI2_OK;
+}
+
 /// @brief Begin communication with the sensor over I2C, initialize it, and set
 /// default config parameters
 /// @param address I2C address of sensor
@@ -57,45 +96,6 @@ int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency)
     return begin();
 }
 
-/// @brief Checks whether sensor is connected, initializes sensor, then sets
-/// default config parameters
-/// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::begin()
-{
-    // Variable to track errors returned by API calls
-    int8_t err = BMI2_OK;
-
-    // Set helper function pointers
-    sensor.read = readRegisters;
-    sensor.write = writeRegisters;
-    sensor.delay_us = usDelay;
-    sensor.intf_ptr = &interfaceData;
-    sensor.read_write_len = 32;
-
-    // Initialize the sensor
-    err = bmi270_init(&sensor);
-    if(err != BMI2_OK) return err;
-
-    // Enable the accelerometer and gyroscope
-    uint8_t features[] = {BMI2_ACCEL, BMI2_GYRO};
-    err = enableFeatures(features, 2);
-    if(err != BMI2_OK) return err;
-
-    // Get the accelerometer and gyroscope configs
-    bmi2_sens_config configs[2];
-    configs[0].type = BMI2_ACCEL;
-    configs[1].type = BMI2_GYRO;
-    err = getConfigs(configs, 2);
-    if(err != BMI2_OK) return err;
-
-    // Store the accelerometer and gyroscope ranges, these are needed elsewhere
-    accRange = configs[0].cfg.acc.range;
-    gyrRange = configs[1].cfg.gyr.range;
-
-    // Done!
-    return BMI2_OK;
-}
-
 /// @brief Performs a soft reset of the sensor
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::reset()
@@ -130,24 +130,6 @@ int8_t BMI270::remapAxes(bmi2_remap axes)
     return bmi2_set_remap_axes(&axes, &sensor);
 }
 
-/// @brief Gets data from the sensor. Must be called to update the data struct
-/// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::getSensorData()
-{
-    // Variable to track errors returned by API calls
-    int8_t err = BMI2_OK;
-
-    // Get raw data from sensor
-    bmi2_sens_data rawData;
-    err = bmi2_get_sensor_data(&rawData, &sensor);
-    if(err != BMI2_OK) return err;
-
-    // Convert raw data to g's and deg/sec
-    convertRawData(&rawData, &data);
-
-    return BMI2_OK;
-}
-
 /// @brief Converts raw acceleration data to floating point value in g's
 /// @param rawData Raw sensor data
 /// @param data Output data
@@ -164,8 +146,8 @@ void BMI270::convertRawAccelData(bmi2_sens_axes_data* rawData, BMI270_SensorData
     uint8_t gRange = 2 << accRange;
 
     // Compute conversion factor from raw to g's. Raw data are signed 16-bit
-    // integers, so resolution is gRange / 2^15
-    float rawToGs = gRange / pow(2, 15);
+    // integers, so resolution is gRange / 2^15 = 32768
+    float rawToGs = gRange / 32768;
 
     // Convert raw data to g's
     data->accelX = rawData->x * rawToGs;
@@ -187,11 +169,11 @@ void BMI270::convertRawGyroData(bmi2_sens_axes_data* rawData, BMI270_SensorData*
     // BMI2_GYR_RANGE_500  | 500
     // BMI2_GYR_RANGE_250  | 250
     // BMI2_GYR_RANGE_125  | 125
-    uint16_t dpsRange = 125 * pow(2, (BMI2_GYR_RANGE_125 - gyrRange));
+    uint16_t dpsRange = 125 * (1 << (BMI2_GYR_RANGE_125 - gyrRange));
 
     // Compute conversion factor from raw to deg/sec. Raw data are signed 16-bit
-    // integers, so resolution is dpsRange / 2^15
-    float rawToDegSec = dpsRange / pow(2, 15);
+    // integers, so resolution is dpsRange / 2^15 = 32768
+    float rawToDegSec = dpsRange / 32768;
 
     // Convert raw data to deg/sec
     data->gyroX = rawData->x * rawToDegSec;
@@ -210,6 +192,24 @@ void BMI270::convertRawData(bmi2_sens_data* rawData, BMI270_SensorData* data)
 
     // Convert raw sensor time to milliseconds
     data->sensorTimeMillis = rawData->sens_time * 1000 * BMI2_SENSORTIME_RESOLUTION;
+}
+
+/// @brief Gets data from the sensor. Must be called to update the data struct
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::getSensorData()
+{
+    // Variable to track errors returned by API calls
+    int8_t err = BMI2_OK;
+
+    // Get raw data from sensor
+    bmi2_sens_data rawData;
+    err = bmi2_get_sensor_data(&rawData, &sensor);
+    if(err != BMI2_OK) return err;
+
+    // Convert raw data to g's and deg/sec
+    convertRawData(&rawData, &data);
+
+    return BMI2_OK;
 }
 
 /// @brief Sets output data rate of accelerometer
@@ -498,16 +498,9 @@ int8_t BMI270::getConfig(bmi2_sens_config* config)
 /// @param numFeatures Size of features array
 /// @param enable Whether to enable or disable the provided features
 /// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::enableFeatures(uint8_t* features, uint8_t numFeatures, bool enable)
+int8_t BMI270::enableFeatures(uint8_t* features, uint8_t numFeatures)
 {
-    if(enable)
-    {
-        return bmi270_sensor_enable(features, numFeatures, &sensor);
-    }
-    else
-    {
-        return bmi270_sensor_disable(features, numFeatures, &sensor);
-    }
+    return bmi270_sensor_enable(features, numFeatures, &sensor);
 }
 
 /// @brief Enables a single feature of the sensor, such as the accelerometer,
@@ -516,9 +509,9 @@ int8_t BMI270::enableFeatures(uint8_t* features, uint8_t numFeatures, bool enabl
 /// values
 /// @param enable Whether to enable or disable the provided feature
 /// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::enableFeature(uint8_t feature, bool enable)
+int8_t BMI270::enableFeature(uint8_t feature)
 {
-    return enableFeatures(&feature, 1, enable);
+    return enableFeatures(&feature, 1);
 }
 
 /// @brief Disables features of the sensor, such as the accelerometer, auxiliary
@@ -529,7 +522,7 @@ int8_t BMI270::enableFeature(uint8_t feature, bool enable)
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::disableFeatures(uint8_t* features, uint8_t numFeatures)
 {
-    return enableFeatures(features, numFeatures, BMI2_DISABLE);
+    return bmi270_sensor_disable(features, numFeatures, &sensor);
 }
 
 /// @brief Disables a single feature of the sensor, such as the accelerometer,
@@ -539,7 +532,7 @@ int8_t BMI270::disableFeatures(uint8_t* features, uint8_t numFeatures)
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::disableFeature(uint8_t feature)
 {
-    return enableFeature(feature, BMI2_DISABLE);
+    return disableFeatures(&feature, 1);
 }
 
 /// @brief Gets data of sensor features, such as step count or wrist gesture
@@ -725,6 +718,12 @@ int8_t BMI270::setFIFOFlags(uint16_t flags, bool enable)
     {
         fifoConfigFlags &= ~flags;
     }
+    
+    // Compute number of bytes per FIFO frame
+    bytesPerFIFOData = 0;
+    bytesPerFIFOData += ((fifoConfigFlags & BMI2_FIFO_ACC_EN) != 0) * 6;
+    bytesPerFIFOData += ((fifoConfigFlags & BMI2_FIFO_GYR_EN) != 0) * 6;
+    bytesPerFIFOData += ((fifoConfigFlags & BMI2_FIFO_HEADER_EN) != 0) * 1;
 
     return BMI2_OK;
 }
@@ -774,7 +773,7 @@ int8_t BMI270::setFIFOSelfWakeup(bool selfWakeUp)
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::setFIFOWatermark(uint16_t numData)
 {
-    return bmi2_set_fifo_wm(numData * bytesPerFIFOData(), &sensor);
+    return bmi2_set_fifo_wm(numData * bytesPerFIFOData, &sensor);
 }
 
 /// @brief Gets the number of bytes currently in the FIFO buffer
@@ -796,66 +795,8 @@ int8_t BMI270::getFIFOLength(uint16_t* length)
     err = getFIFOLengthBytes(length);
     if(err != BMI2_OK) return err;
 
-    *length /= bytesPerFIFOData();
+    *length /= bytesPerFIFOData;
 
-    return BMI2_OK;
-}
-
-/// @brief Gets sensor data out of the FIFO buffer
-/// @param data Array of data structs, see BMI270_SensorData
-/// @param numData Number of measurements to read
-/// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::getFIFOData(BMI270_SensorData* data, uint16_t* numData)
-{
-    // Variable to track errors returned by API calls
-    int8_t err = BMI2_OK;
-
-    // Get number of bytes in the FIFO
-    uint16_t numFIFOBytes = 0;
-    getFIFOLengthBytes(&numFIFOBytes);
-
-    // Create a byte buffer to hold raw FIFO data
-    uint8_t* fifoBuffer = (uint8_t*) malloc(numFIFOBytes);
-
-    // Computer how many data frames should be in the FIFO
-    uint8_t numFrames = numFIFOBytes / bytesPerFIFOData();
-
-    // Ensure we have enough frames to fill the requested data
-    if(*numData > numFrames)
-    {
-        *numData = numFrames;
-    }
-
-    // Create a struct for handling FIFO
-    bmi2_fifo_frame fifoData;
-    fifoData.length = numFIFOBytes + sensor.dummy_byte;
-    fifoData.data = fifoBuffer;
-
-    // Read data out fo the FIFO into the byte buffer
-    err = bmi2_read_fifo_data(&fifoData, &sensor);
-    if(err != BMI2_OK)
-    {
-        free(fifoBuffer);
-        return err;
-    }
-
-    // Extract the raw acceleration data from the buffer
-    err = extractFIFOData(data, &fifoData, numData, BMI2_ACCEL);
-    if(err < BMI2_OK)
-    {
-        free(fifoBuffer);
-        return err;
-    }
-
-    // Extract the raw gyroscope data from the buffer
-    err = extractFIFOData(data, &fifoData, numData, BMI2_GYRO);
-    if(err < BMI2_OK)
-    {
-        free(fifoBuffer);
-        return err;
-    }
-
-    free(fifoBuffer);
     return BMI2_OK;
 }
 
@@ -916,22 +857,69 @@ int8_t BMI270::extractFIFOData(BMI270_SensorData* data, bmi2_fifo_frame* fifoDat
     return err;
 }
 
+/// @brief Gets sensor data out of the FIFO buffer
+/// @param data Array of data structs, see BMI270_SensorData
+/// @param numData Number of measurements to read
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::getFIFOData(BMI270_SensorData* data, uint16_t* numData)
+{
+    // Variable to track errors returned by API calls
+    int8_t err = BMI2_OK;
+
+    // Get number of bytes in the FIFO
+    uint16_t numFIFOBytes = 0;
+    getFIFOLengthBytes(&numFIFOBytes);
+
+    // Create a byte buffer to hold raw FIFO data
+    uint8_t* fifoBuffer = (uint8_t*) malloc(numFIFOBytes);
+
+    // Computer how many data frames should be in the FIFO
+    uint8_t numFrames = numFIFOBytes / bytesPerFIFOData;
+
+    // Ensure we have enough frames to fill the requested data
+    if(*numData > numFrames)
+    {
+        *numData = numFrames;
+    }
+
+    // Create a struct for handling FIFO
+    bmi2_fifo_frame fifoData;
+    fifoData.length = numFIFOBytes + sensor.dummy_byte;
+    fifoData.data = fifoBuffer;
+
+    // Read data out fo the FIFO into the byte buffer
+    err = bmi2_read_fifo_data(&fifoData, &sensor);
+    if(err != BMI2_OK)
+    {
+        free(fifoBuffer);
+        return err;
+    }
+
+    // Extract the raw acceleration data from the buffer
+    err = extractFIFOData(data, &fifoData, numData, BMI2_ACCEL);
+    if(err < BMI2_OK)
+    {
+        free(fifoBuffer);
+        return err;
+    }
+
+    // Extract the raw gyroscope data from the buffer
+    err = extractFIFOData(data, &fifoData, numData, BMI2_GYRO);
+    if(err < BMI2_OK)
+    {
+        free(fifoBuffer);
+        return err;
+    }
+
+    free(fifoBuffer);
+    return BMI2_OK;
+}
+
 /// @brief Clears all data in FIFO buffer
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::flushFIFO()
 {
     return bmi2_set_command_register(BMI2_FIFO_FLUSH_CMD, &sensor);
-}
-
-/// @brief Computes the number of bytes per measurement in the FIFO buffer
-/// @return Number of bytes per measurement
-uint8_t BMI270::bytesPerFIFOData()
-{
-    uint8_t bytesPerFrame = 0;
-    bytesPerFrame += ((fifoConfigFlags & BMI2_FIFO_ACC_EN) != 0) * 6;
-    bytesPerFrame += ((fifoConfigFlags & BMI2_FIFO_GYR_EN) != 0) * 6;
-    bytesPerFrame += ((fifoConfigFlags & BMI2_FIFO_HEADER_EN) != 0) * 1;
-    return bytesPerFrame;
 }
 
 /// @brief Gets number of steps counted by the sensor
