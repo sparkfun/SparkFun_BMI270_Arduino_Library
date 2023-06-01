@@ -147,7 +147,7 @@ void BMI270::convertRawAccelData(bmi2_sens_axes_data* rawData, BMI270_SensorData
 
     // Compute conversion factor from raw to g's. Raw data are signed 16-bit
     // integers, so resolution is gRange / 2^15 = 32768
-    float rawToGs = gRange / 32768;
+    float rawToGs = gRange / 32768.0;
 
     // Convert raw data to g's
     data->accelX = rawData->x * rawToGs;
@@ -173,7 +173,7 @@ void BMI270::convertRawGyroData(bmi2_sens_axes_data* rawData, BMI270_SensorData*
 
     // Compute conversion factor from raw to deg/sec. Raw data are signed 16-bit
     // integers, so resolution is dpsRange / 2^15 = 32768
-    float rawToDegSec = dpsRange / 32768;
+    float rawToDegSec = dpsRange / 32768.0;
 
     // Convert raw data to deg/sec
     data->gyroX = rawData->x * rawToDegSec;
