@@ -94,11 +94,19 @@ void setup()
         if(Serial.read() == 'Y')
         {
             // Save NVM contents
-            int err = imu.saveNVM();
-            Serial.printf("nvmErr: %i\n", err);
-
-            Serial.println();
-            Serial.println("Calibration values have been saved to the NVM!");
+            int8_t err = imu.saveNVM();
+            
+            // Check to see if the NVM saved successfully
+            if(err == BMI2_OK)
+            {
+                Serial.println();
+                Serial.println("Calibration values have been saved to the NVM!");
+            }
+            else
+            {
+                Serial.print("Error saving to NVM, error code: ");
+                Serial.println(err);
+            }
         }
     }
 
