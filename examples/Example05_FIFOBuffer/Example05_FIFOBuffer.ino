@@ -70,8 +70,8 @@ void setup()
     config.watermark = numSamples;
     config.accelDownSample = BMI2_FIFO_DOWN_SAMPLE_16;
     config.gyroDownSample = BMI2_FIFO_DOWN_SAMPLE_16;
-    config.accelFilter = BMI2_DISABLE;
-    config.gyroFilter = BMI2_DISABLE;
+    config.accelFilter = BMI2_ENABLE;
+    config.gyroFilter = BMI2_ENABLE;
     config.selfWakeUp = BMI2_ENABLE;
     imu.setFIFOConfig(config);
 
