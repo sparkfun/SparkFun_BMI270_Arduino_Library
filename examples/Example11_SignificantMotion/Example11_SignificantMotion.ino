@@ -49,10 +49,6 @@ void setup()
     // 
     // .block_size - Time required to trigger an interrupt. 20ms resolution, up
     //               to 1310 seconds (default: 250 = 5s)
-    // .param_2    - Affects behavior of motion detection (default: 0x0096)
-    // .param_3    - Affects behavior of motion detection (default: 0x094B)
-    // .param_4    - Affects behavior of motion detection (default: 0x0011)
-    // .param_5    - Affects behavior of motion detection (default: 0x0011)
     // 
     // This example uses the default parameter values defined by the sensor, but
     // you can change these values by uncommenting the lines below
@@ -60,10 +56,6 @@ void setup()
     // bmi2_sens_config config;
     // config.type = BMI2_SIG_MOTION;
     // config.cfg.sig_motion.block_size = 250;
-    // config.cfg.sig_motion.param_2 = 0x0096;
-    // config.cfg.sig_motion.param_3 = 0x094B;
-    // config.cfg.sig_motion.param_4 = 0x0011;
-    // config.cfg.sig_motion.param_5 = 0x0011;
     // imu.setConfig(config);
 
     // The BMI270 has 2 interrupt pins. All interrupt conditions can be mapped
