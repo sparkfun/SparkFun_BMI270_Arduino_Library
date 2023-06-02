@@ -154,6 +154,7 @@ class BMI270
 
         // Data acquisistion
         int8_t getSensorData();
+        int8_t getTemperature(float* tempC);
 
         // Accelerometer and gyroscope parameters
         int8_t setAccelODR(uint8_t odr);
@@ -228,6 +229,7 @@ class BMI270
         void convertRawAccelData(bmi2_sens_axes_data* rawData, BMI270_SensorData* data);
         void convertRawGyroData(bmi2_sens_axes_data* rawData, BMI270_SensorData* data);
         void convertRawData(bmi2_sens_data* rawData, BMI270_SensorData* data);
+        void convertRawTemperature(uint16_t tempRaw, float* tempC);
 
         // FIFO helper functions
         int8_t extractFIFOData(BMI270_SensorData* data, bmi2_fifo_frame* fifoData, uint16_t* numFrames, uint8_t sensorSelect);

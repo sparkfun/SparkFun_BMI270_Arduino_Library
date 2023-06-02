@@ -194,6 +194,15 @@ void BMI270::convertRawData(bmi2_sens_data* rawData, BMI270_SensorData* data)
     data->sensorTimeMillis = rawData->sens_time * 1000 * BMI2_SENSORTIME_RESOLUTION;
 }
 
+/// @brief Converts raw temperature to degrees Celsius
+/// @param tempRaw Raw temperature from sensor
+/// @param tempC Converted temperature in degrees Celsius
+void BMI270::convertRawTemperature(uint16_t tempRaw, float* tempC)
+{
+    // Convert raw temperature to deg C as defined by datasheet
+    *tempC = ((int16_t)tempRaw) / 512.0 + 23.0;
+}
+
 /// @brief Gets data from the sensor. Must be called to update the data struct
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::getSensorData()
@@ -208,6 +217,25 @@ int8_t BMI270::getSensorData()
 
     // Convert raw data to g's and deg/sec
     convertRawData(&rawData, &data);
+
+    return BMI2_OK;
+}
+
+/// @brief Gets temperature measured by the sensor
+/// @param tempC Temperature in degrees Celsius
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::getTemperature(float* tempC)
+{
+    // Variable to track errors returned by API calls
+    int8_t err = BMI2_OK;
+
+    // Get raw temperature from sensor
+    uint16_t tempRaw;
+    err = bmi2_get_temperature_data(&tempRaw, &sensor);
+    if(err != BMI2_OK) return err;
+
+    // Convert raw temperature to degrees Celsius
+    convertRawTemperature(tempRaw, tempC);
 
     return BMI2_OK;
 }
@@ -505,7 +533,7 @@ int8_t BMI270::enableFeatures(uint8_t* features, uint8_t numFeatures)
 
 /// @brief Enables a single feature of the sensor, such as the accelerometer,
 /// auxiliary I2C bus, or interrupts
-/// @param features Feature to be enabled, see bmi270_sensor_enable for possible
+/// @param feature Feature to be enabled, see bmi270_sensor_enable for possible
 /// values
 /// @param enable Whether to enable or disable the provided feature
 /// @return Error code (0 is success, negative is failure, positive is warning)
@@ -527,7 +555,7 @@ int8_t BMI270::disableFeatures(uint8_t* features, uint8_t numFeatures)
 
 /// @brief Disables a single feature of the sensor, such as the accelerometer,
 /// auxiliary I2C bus, or interrupts
-/// @param features Feature to be disabled, see bmi270_sensor_enable for possible
+/// @param feature Feature to be disabled, see bmi270_sensor_enable for possible
 /// values
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::disableFeature(uint8_t feature)
