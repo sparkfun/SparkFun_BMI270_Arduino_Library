@@ -94,6 +94,9 @@ struct BMI270_SensorData
     float gyroY;
     float gyroZ;
 
+    // Auxiliary sensor data, raw bytes
+    uint8_t auxData[BMI2_AUX_NUM_BYTES];
+
     // Time of this data in milliseconds, measured by sensor
     uint32_t sensorTimeMillis;
 };
@@ -217,6 +220,11 @@ class BMI270
         int8_t performComponentRetrim();
         int8_t saveNVM();
         int8_t selfTest();
+
+        int8_t setAuxPullUps(uint8_t pullUpValue);
+        int8_t readAux(uint8_t addr, uint8_t numBytes);
+        int8_t writeAux(uint8_t addr, uint8_t* data, uint8_t numBytes);
+        int8_t writeAux(uint8_t addr, uint8_t data);
 
         // Latest measurement from the sensor
         BMI270_SensorData data;

@@ -190,6 +190,8 @@ void BMI270::convertRawData(bmi2_sens_data* rawData, BMI270_SensorData* data)
     convertRawAccelData(&(rawData->acc), data);
     convertRawGyroData(&(rawData->gyr), data);
 
+    memcpy(data->auxData, rawData->aux_data, BMI2_AUX_NUM_BYTES);
+
     // Convert raw sensor time to milliseconds
     data->sensorTimeMillis = rawData->sens_time * 1000 * BMI2_SENSORTIME_RESOLUTION;
 }
@@ -1125,6 +1127,53 @@ int8_t BMI270::selfTest()
 
     // Re-initialize sensor to ensure all settings are back to default
     return begin();
+}
+
+/// @brief Sets pull up resistors on auxiliary I2C pins
+/// @param pullUpValue Pull up resistor values, can be one of the following:
+///     BMI2_ASDA_PUPSEL_OFF
+///     BMI2_ASDA_PUPSEL_40K
+///     BMI2_ASDA_PUPSEL_10K
+///     BMI2_ASDA_PUPSEL_2K
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::setAuxPullUps(uint8_t pullUpValue)
+{
+    return writeRegisters(BMI2_AUX_IF_TRIM, &pullUpValue, 1, &interfaceData);
+}
+
+/// @brief Reads data from device on auxiliary I2C bus. Regardless of the value
+/// of numBytes, this will always read man_rd_burst bytes from the sensor, then
+/// numBytes will be copied into the auxData buffer. This is only supported in
+/// manual mode
+/// @param addr Register address to read from
+/// @param numBytes Number of bytes to read
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::readAux(uint8_t addr, uint8_t numBytes)
+{
+    return bmi2_read_aux_man_mode(addr, data.auxData, numBytes, &sensor);
+}
+
+/// @brief Writes bytes to device on auxiliary I2C bus. Note that burst writing
+/// is not supported by the BMI270's aux interface, data is instead sent 1 byte
+/// at a time in register data pairs (register address is auto incremented).
+/// This is only supported in manual mode
+/// @param addr Register address to start writing data
+/// @param data Data to write
+/// @param numBytes Number of bytes to write
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::writeAux(uint8_t addr, uint8_t* data, uint8_t numBytes)
+{
+    return bmi2_write_aux_man_mode(addr, data, numBytes, &sensor);
+}
+
+/// @brief Writes a single byte to device on auxiliary I2C bus. This is only
+/// supported in manual mode
+/// @param addr Register address to write
+/// @param data Value to write
+/// @return Error code (0 is success, negative is failure, positive is warning)
+int8_t BMI270::writeAux(uint8_t addr, uint8_t data)
+{
+    return writeAux(addr, &data, 1);
 }
 
 /// @brief Helper function to read sensor registers
