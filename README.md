@@ -10,8 +10,8 @@
         </th>
     </tr>
     <tr align="center">
-        <td><a href="https://www.sparkfun.com/products/22397"><img src="" alt=""></a></td>
-        <td><a href="https://www.sparkfun.com/products/22398"><img src="" alt=""></a></td>
+        <td><a href="https://www.sparkfun.com/products/22397"><img src="https://cdn.sparkfun.com/assets/parts/2/2/4/2/9/22397_1_1.jpg" alt=""></a></td>
+        <td><a href="https://www.sparkfun.com/products/22398"><img src="https://cdn.sparkfun.com/assets/parts/2/2/4/3/0/22398_1_1.jpg" alt=""></a></td>
     </tr>
     <tr align="center">
         <td><a href="https://www.sparkfun.com/products/22397">SparkFun 6DoF IMU Breakout - BMI270 (Qwiic)</a></td>
