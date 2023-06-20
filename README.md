@@ -19,6 +19,13 @@
     </tr>
 </table>
 
+The SparkFun BMI270 6DoF IMU Breakout is a Qwiic-enabled breakout board based on the ultra-low power BMI270 from Bosch. This chip is a highly integrated, low power IMU optimized for wearables providing precise acceleration, angular rate measurement and intelligent on-chip motion-triggered interrupt features.. Not only does the BMI270 comprise a fast and sensitive accelerometer and gyro pair, but it also contains a number of intelligent, on-chip motion-triggered interrupt features.  
+
+Our Standard-sized 1in. x 1in. Qwiic BMI270 IMU Breakout makes it easy to add this sensor to your project using our solderless Qwiic cables and compatible controllers. If you still prefer to use a breadboard, don't worry, we've still broken out all IO pins to 0.1" spaced pin-headers along the sides of the board. On-board solder jumpers allow you to easily select the device address, remove the I²C pull-ups, and disable the power LED if need be. 
+
+Our Micro-sized 0.3in. x 0.75in. footprint makes this breakout board an ideal option for your smallest projects using our solderless Qwiic cables and compatible controllers. On-board solder jumpers allow you to easily select the device address, remove the I²C pull-ups, and disable the power LED if need be. 
+
+The 6-axis sensor combines a 16-bit tri-axial gyroscope and a 16-bit tri-axial accelerometer featuring Bosch’s automotive-proven gyroscope technology. BMI270 includes several functionalities such as an integrated plug-and-play step counter/detector and gesture detection for wrist-worn devices. Moreover, the IMU is suitable for hearables, smart clothes, smart shoes, smart glasses and ankle bands.
 
 Repository Contents
 -------------------
