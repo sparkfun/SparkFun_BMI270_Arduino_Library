@@ -38,8 +38,8 @@ int8_t BMI270::begin()
     if(err != BMI2_OK) return err;
 
     // Store the accelerometer and gyroscope ranges, these are needed elsewhere
-    accRange = configs[0].cfg.acc.range;
-    gyrRange = configs[1].cfg.gyr.range;
+    rawToGs = convertRawToGsScalar(configs[0].cfg.acc.range);
+    rawToDegSec = convertRawToDegSecScalar(configs[1].cfg.gyr.range);
 
     // Done!
     return BMI2_OK;
@@ -135,21 +135,8 @@ int8_t BMI270::remapAxes(bmi2_remap axes)
 /// @param data Output data
 void BMI270::convertRawAccelData(bmi2_sens_axes_data* rawData, BMI270_SensorData* data)
 {
-    // Compute the current accelerometer range as a number
-    // 
-    // accRange           | gRange
-    // ---------------------------
-    // BMI2_ACC_RANGE_2G  | 2
-    // BMI2_ACC_RANGE_4G  | 4
-    // BMI2_ACC_RANGE_8G  | 8
-    // BMI2_ACC_RANGE_16G | 16
-    uint8_t gRange = 2 << accRange;
-
     // Compute conversion factor from raw to g's. Raw data are signed 16-bit
     // integers, so resolution is gRange / 2^15 = 32768
-    float rawToGs = gRange / 32768.0;
-
-    // Convert raw data to g's
     data->accelX = rawData->x * rawToGs;
     data->accelY = rawData->y * rawToGs;
     data->accelZ = rawData->z * rawToGs;
@@ -160,22 +147,8 @@ void BMI270::convertRawAccelData(bmi2_sens_axes_data* rawData, BMI270_SensorData
 /// @param data Output data
 void BMI270::convertRawGyroData(bmi2_sens_axes_data* rawData, BMI270_SensorData* data)
 {
-    // Compute the current gyro range as a number
-    // 
-    // gyrRange            | dpsRange
-    // ------------------------------
-    // BMI2_GYR_RANGE_2000 | 2000
-    // BMI2_GYR_RANGE_1000 | 1000
-    // BMI2_GYR_RANGE_500  | 500
-    // BMI2_GYR_RANGE_250  | 250
-    // BMI2_GYR_RANGE_125  | 125
-    uint16_t dpsRange = 125 * (1 << (BMI2_GYR_RANGE_125 - gyrRange));
-
     // Compute conversion factor from raw to deg/sec. Raw data are signed 16-bit
     // integers, so resolution is dpsRange / 2^15 = 32768
-    float rawToDegSec = dpsRange / 32768.0;
-
-    // Convert raw data to deg/sec
     data->gyroX = rawData->x * rawToDegSec;
     data->gyroY = rawData->y * rawToDegSec;
     data->gyroZ = rawData->z * rawToDegSec;
@@ -440,13 +413,11 @@ int8_t BMI270::setConfigs(bmi2_sens_config* configs, uint8_t numConfigs)
     {
         if(configs[i].type == BMI2_ACCEL)
         {
-            // Update accelerometer range
-            accRange = configs[i].cfg.acc.range;
+            rawToGs = convertRawToGsScalar(configs[i].cfg.acc.range);
         }
         else if(configs[i].type == BMI2_GYRO)
         {
-            // Update gyro range
-            gyrRange = configs[i].cfg.gyr.range;
+            rawToDegSec = convertRawToDegSecScalar(configs[i].cfg.gyr.range);
         }
     }
 
@@ -1355,4 +1326,33 @@ BMI2_INTF_RETURN_TYPE BMI270::writeRegistersSPI(uint8_t regAddress, const uint8_
 void BMI270::usDelay(uint32_t period, void* interfacePtr)
 {
     delayMicroseconds(period);
+}
+
+/// @brief Helper function to generate the correct conversion value for accelerometer data
+/// @param accRange Accelerometer range enum value
+/// @return float conversion scalar
+float BMI270::convertRawToGsScalar(uint8_t accRange)
+{
+    // accRange             | return value
+    // -----------------------------------
+    // BMI2_ACC_RANGE_2G    | 2
+    // BMI2_ACC_RANGE_4G    | 4
+    // BMI2_ACC_RANGE_8G    | 8
+    // BMI2_ACC_RANGE_16G   | 16
+    return ((2 << accRange) / 32768.0);
+}
+
+/// @brief Helper function to generate the correct conversion value for gyro data
+/// @param gyrRange Gyro range enum value
+/// @return float conversion scalar
+float BMI270::convertRawToDegSecScalar(uint8_t gyrRange)
+{
+    // gyrRange             | return value
+    // -----------------------------------
+    // BMI2_GYR_RANGE_2000  | 2000
+    // BMI2_GYR_RANGE_1000  | 1000
+    // BMI2_GYR_RANGE_500   | 500
+    // BMI2_GYR_RANGE_250   | 250
+    // BMI2_GYR_RANGE_125   | 125
+    return ((125 * (1 << (BMI2_GYR_RANGE_125 - gyrRange))) / 32768.0);
 }

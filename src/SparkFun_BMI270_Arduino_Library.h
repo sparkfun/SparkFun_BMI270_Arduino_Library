@@ -253,6 +253,9 @@ class BMI270
         // Deley helper function
         static void usDelay(uint32_t period, void* interfacePtr);
 
+        float convertRawToGsScalar(uint8_t accRange);
+        float convertRawToDegSecScalar(uint8_t gyrRange);
+
         // Reference to the sensor
         struct bmi2_dev sensor;
 
@@ -260,8 +263,8 @@ class BMI270
         BMI270_InterfaceData interfaceData;
 
         // Need to track the range of each sensor for converting raw data
-        uint8_t accRange;
-        uint8_t gyrRange;
+        float rawToGs;
+        float rawToDegSec;
 
         // Need to track the FIFO config for some FIFO functions
         uint16_t fifoConfigFlags;
