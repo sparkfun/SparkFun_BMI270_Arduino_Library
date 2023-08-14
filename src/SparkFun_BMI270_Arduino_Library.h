@@ -261,7 +261,7 @@ class BMI270
 
         // Need to track the range of each sensor for converting raw data
         uint8_t accRange;
-        uint8_t gyrRange;
+        uint16_t gyrRange;
 
         // Need to track the FIFO config for some FIFO functions
         uint16_t fifoConfigFlags;
