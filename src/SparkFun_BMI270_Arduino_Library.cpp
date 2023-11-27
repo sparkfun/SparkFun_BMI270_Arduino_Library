@@ -377,7 +377,15 @@ int8_t BMI270::setGyroFilterBandwidth(uint8_t bandwidthParam)
 /// @return Error code (0 is success, negative is failure, positive is warning)
 int8_t BMI270::enableAdvancedPowerSave(bool enable)
 {
-    return bmi2_set_adv_power_save(BMI2_ENABLE, &sensor);
+    if (enable)
+    {
+        return bmi2_set_adv_power_save(BMI2_ENABLE, &sensor);
+    }
+    else
+    {
+        return bmi2_set_adv_power_save(BMI2_DISABLE, &sensor);
+    }
+    
 }
 
 /// @brief Disables advanced power save mode
