@@ -147,8 +147,8 @@ class BMI270
         BMI270();
 
         // Sensor initialization, must specify communication interface
-        int8_t beginI2C(uint8_t address = BMI2_I2C_PRIM_ADDR, TwoWire& wirePort = Wire);
-        int8_t beginSPI(uint8_t csPin, uint32_t clockFrequency = 100000);
+        int8_t beginI2C(uint8_t address = BMI2_I2C_PRIM_ADDR, TwoWire& wirePort = Wire, bool skip_reset = false);
+        int8_t beginSPI(uint8_t csPin, uint32_t clockFrequency = 100000, bool skip_reset = false);
 
         // Sensor control
         int8_t reset();
@@ -231,7 +231,7 @@ class BMI270
 
     private:
         // Sensor initialization, after communication interface has been selected
-        int8_t begin();
+        int8_t begin(bool skip_reset = false);
 
         // Convert from raw data (bmi2_sens_data) to g's (BMI270_SensorData)
         void convertRawAccelData(bmi2_sens_axes_data* rawData, BMI270_SensorData* data);

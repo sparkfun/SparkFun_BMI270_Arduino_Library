@@ -9,7 +9,7 @@ BMI270::BMI270()
 /// @brief Checks whether sensor is connected, initializes sensor, then sets
 /// default config parameters
 /// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::begin()
+int8_t BMI270::begin(bool skip_reset)
 {
     // Variable to track errors returned by API calls
     int8_t err = BMI2_OK;
@@ -22,7 +22,7 @@ int8_t BMI270::begin()
     sensor.read_write_len = 32;
 
     // Initialize the sensor
-    err = bmi270_init(&sensor);
+    err = bmi270_init(&sensor, skip_reset ? 1 : 0);
     if(err != BMI2_OK) return err;
 
     // Enable the accelerometer and gyroscope
@@ -50,7 +50,7 @@ int8_t BMI270::begin()
 /// @param address I2C address of sensor
 /// @param wirePort I2C port to use for communication, defaults to Wire
 /// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::beginI2C(uint8_t address, TwoWire& wirePort)
+int8_t BMI270::beginI2C(uint8_t address, TwoWire& wirePort, bool skip_reset)
 {
     // Check whether address is valid option
     if(address != BMI2_I2C_PRIM_ADDR && address != BMI2_I2C_SEC_ADDR)
@@ -68,7 +68,7 @@ int8_t BMI270::beginI2C(uint8_t address, TwoWire& wirePort)
     interfaceData.interface = BMI2_I2C_INTF;
 
     // Initialize sensor
-    return begin();
+    return begin(skip_reset);
 }
 
 /// @brief Begin communication with the sensor over SPI, initialize it, and set
@@ -76,7 +76,7 @@ int8_t BMI270::beginI2C(uint8_t address, TwoWire& wirePort)
 /// @param csPin Chip select pin of sensor
 /// @param clockFrequency SPI clock frequency
 /// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency)
+int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency, bool skip_reset)
 {
     // Set up chip select pin
     interfaceData.spiCSPin = csPin;
@@ -93,7 +93,7 @@ int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency)
     sensor.dummy_byte = 1;
 
     // Initialize sensor
-    return begin();
+    return begin(skip_reset);
 }
 
 /// @brief Performs a soft reset of the sensor
@@ -385,7 +385,7 @@ int8_t BMI270::enableAdvancedPowerSave(bool enable)
     {
         return bmi2_set_adv_power_save(BMI2_DISABLE, &sensor);
     }
-    
+
 }
 
 /// @brief Disables advanced power save mode
@@ -664,7 +664,7 @@ int8_t BMI270::setFIFOConfig(BMI270_FIFOConfig config)
     // Set flag bits
     err = setFIFOFlags(config.flags, BMI2_ENABLE);
     if(err != BMI2_OK) return err;
-    
+
     // Clear unused flag bits
     err = setFIFOFlags(~config.flags, BMI2_DISABLE);
     if(err != BMI2_OK) return err;
@@ -727,7 +727,7 @@ int8_t BMI270::setFIFOFlags(uint16_t flags, bool enable)
     {
         fifoConfigFlags &= ~flags;
     }
-    
+
     // Compute number of bytes per FIFO frame
     bytesPerFIFOData = 0;
     bytesPerFIFOData += ((fifoConfigFlags & BMI2_FIFO_ACC_EN) != 0) * 6;
@@ -827,13 +827,13 @@ int8_t BMI270::extractFIFOData(BMI270_SensorData* data, bmi2_fifo_frame* fifoDat
         // Sensor is disabled in FIFO, just return
         return BMI2_OK;
     }
-    
+
     // Variable to track errors returned by API calls
     int8_t err = BMI2_OK;
 
     // Create buffer to hold raw data
     bmi2_sens_axes_data* rawData = (bmi2_sens_axes_data*) malloc((*numFrames) * sizeof(bmi2_sens_axes_data));
-    
+
     // Extract raw data from the FIFO data
     if(sensorSelect == BMI2_ACCEL)
     {
@@ -848,7 +848,7 @@ int8_t BMI270::extractFIFOData(BMI270_SensorData* data, bmi2_fifo_frame* fifoDat
         free(rawData);
         return err;
     }
-    
+
     // Convert raw data
     for(int i = 0; i < (*numFrames); i++)
     {
@@ -861,7 +861,7 @@ int8_t BMI270::extractFIFOData(BMI270_SensorData* data, bmi2_fifo_frame* fifoDat
             convertRawGyroData(&(rawData[i]), &(data[i]));
         }
     }
-    
+
     free(rawData);
     return err;
 }
@@ -944,7 +944,7 @@ int8_t BMI270::getStepCount(uint32_t* count)
     featureData.type = BMI2_STEP_COUNTER;
     err = getFeatureData(&featureData);
     if(err) return err;
-    
+
     *count = featureData.sens_data.step_counter_output;
     return BMI2_OK;
 }
@@ -1002,7 +1002,7 @@ int8_t BMI270::getStepActivity(uint8_t* activity)
     featureData.type = BMI2_STEP_ACTIVITY;
     err = getFeatureData(&featureData);
     if(err) return err;
-    
+
     *activity = featureData.sens_data.activity_output;
     return BMI2_OK;
 }
@@ -1026,7 +1026,7 @@ int8_t BMI270::getWristGesture(uint8_t* gesture)
     featureData.type = BMI2_WRIST_GESTURE;
     err = getFeatureData(&featureData);
     if(err) return err;
-    
+
     *gesture = featureData.sens_data.wrist_gesture_output;
     return BMI2_OK;
 }
@@ -1284,7 +1284,7 @@ BMI2_INTF_RETURN_TYPE BMI270::writeRegistersI2C(uint8_t regAddress, const uint8_
 
     // Write the address
     interfaceData->i2cPort->write(regAddress);
-    
+
     // Write all the data
     for(uint32_t i = 0; i < numBytes; i++)
     {
@@ -1311,10 +1311,10 @@ BMI2_INTF_RETURN_TYPE BMI270::writeRegistersSPI(uint8_t regAddress, const uint8_
     // Begin transmission
     SPI.beginTransaction(SPISettings(interfaceData->spiClockFrequency, MSBFIRST, SPI_MODE0));
     digitalWrite(interfaceData->spiCSPin, LOW);
-    
+
     // Write the address
     SPI.transfer(regAddress);
-    
+
     // Write all the data
     for(uint32_t i = 0; i < numBytes; i++)
     {
