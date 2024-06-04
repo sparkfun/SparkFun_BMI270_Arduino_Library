@@ -79,6 +79,7 @@ struct BMI270_InterfaceData
     // SPI settings
     uint8_t spiCSPin;
     uint32_t spiClockFrequency;
+    SPIClass* spiPort;
 };
 
 // Struct to hold acceleration data
@@ -148,7 +149,7 @@ class BMI270
 
         // Sensor initialization, must specify communication interface
         int8_t beginI2C(uint8_t address = BMI2_I2C_PRIM_ADDR, TwoWire& wirePort = Wire);
-        int8_t beginSPI(uint8_t csPin, uint32_t clockFrequency = 100000);
+        int8_t beginSPI(uint8_t csPin, uint32_t clockFrequency = 100000, SPIClass& spiPort = SPI);
 
         // Sensor control
         int8_t reset();

@@ -76,7 +76,7 @@ int8_t BMI270::beginI2C(uint8_t address, TwoWire& wirePort)
 /// @param csPin Chip select pin of sensor
 /// @param clockFrequency SPI clock frequency
 /// @return Error code (0 is success, negative is failure, positive is warning)
-int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency)
+int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency, SPIClass& spiPort)
 {
     // Set up chip select pin
     interfaceData.spiCSPin = csPin;
@@ -85,6 +85,7 @@ int8_t BMI270::beginSPI(uint8_t csPin, uint32_t clockFrequency)
 
     // Set desired clock frequency
     interfaceData.spiClockFrequency = clockFrequency;
+    interfaceData.spiPort = &spiPort;
 
     // Set interface
     sensor.intf = BMI2_SPI_INTF;
@@ -1223,19 +1224,19 @@ BMI2_INTF_RETURN_TYPE BMI270::readRegistersI2C(uint8_t regAddress, uint8_t* data
 BMI2_INTF_RETURN_TYPE BMI270::readRegistersSPI(uint8_t regAddress, uint8_t* dataBuffer, uint32_t numBytes, BMI270_InterfaceData* interfaceData)
 {
     // Start transmission
-    SPI.beginTransaction(SPISettings(interfaceData->spiClockFrequency, MSBFIRST, SPI_MODE0));
+    interfaceData->spiPort->beginTransaction(SPISettings(interfaceData->spiClockFrequency, MSBFIRST, SPI_MODE0));
     digitalWrite(interfaceData->spiCSPin, LOW);
-    SPI.transfer(regAddress | 0x80);
+    interfaceData->spiPort->transfer(regAddress | 0x80);
 
     // Read all requested bytes
     for(uint32_t i = 0; i < numBytes; i++)
     {
-        dataBuffer[i] = SPI.transfer(0);
+        dataBuffer[i] = interfaceData->spiPort->transfer(0);
     }
 
     // End transmission
     digitalWrite(interfaceData->spiCSPin, HIGH);
-    SPI.endTransaction();
+    interfaceData->spiPort->endTransaction();
 
     return BMI2_OK;
 }
@@ -1309,21 +1310,21 @@ BMI2_INTF_RETURN_TYPE BMI270::writeRegistersI2C(uint8_t regAddress, const uint8_
 BMI2_INTF_RETURN_TYPE BMI270::writeRegistersSPI(uint8_t regAddress, const uint8_t* dataBuffer, uint32_t numBytes, BMI270_InterfaceData* interfaceData)
 {
     // Begin transmission
-    SPI.beginTransaction(SPISettings(interfaceData->spiClockFrequency, MSBFIRST, SPI_MODE0));
+    interfaceData->spiPort->beginTransaction(SPISettings(interfaceData->spiClockFrequency, MSBFIRST, SPI_MODE0));
     digitalWrite(interfaceData->spiCSPin, LOW);
     
     // Write the address
-    SPI.transfer(regAddress);
+    interfaceData->spiPort->transfer(regAddress);
     
     // Write all the data
     for(uint32_t i = 0; i < numBytes; i++)
     {
-        SPI.transfer(dataBuffer[i]);
+        interfaceData->spiPort->transfer(dataBuffer[i]);
     }
 
     // End transmission
     digitalWrite(interfaceData->spiCSPin, HIGH);
-    SPI.endTransaction();
+    interfaceData->spiPort->endTransaction();
 
     return BMI2_OK;
 }
